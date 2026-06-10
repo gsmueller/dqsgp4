@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="math">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="geodesy">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="astronomy">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="perturbation">
+      <UniqueIdentifier>{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tle">
+      <UniqueIdentifier>{A2FE74E1-B743-11d0-AE1A-00A0C90FFFC3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sgp4">
+      <UniqueIdentifier>{C7C8A4BA-1DA5-4DDB-A64E-CF2D9F3C3DB2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\tle\tle_parser.cpp">
+      <Filter>tle</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\math\tracked_value.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\math\series.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\math\factorial.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\math\wallis.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\math\kepler.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\math\angles.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\math\vector3.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\geodesy\equipotential_ellipsoid.h">
+      <Filter>geodesy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\astronomy\solar_system.h">
+      <Filter>astronomy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\perturbation\brouwer.h">
+      <Filter>perturbation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\perturbation\kaula.h">
+      <Filter>perturbation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tle\tle_parser.h">
+      <Filter>tle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sgp4\model_functions.h">
+      <Filter>sgp4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sgp4\model_selector.h">
+      <Filter>sgp4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sgp4\near_space.h">
+      <Filter>sgp4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sgp4\sgp4_propagator.h">
+      <Filter>sgp4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sgp4\state_vector.h">
+      <Filter>sgp4</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Help guide — DQSGP4</title><style>
+body { font-family: Segoe UI, Helvetica, Arial, sans-serif; margin: 0; color: #1a232e;
+       background: #f6f8fa; line-height: 1.55; }
+header { background: #102a43; color: #f0f4f8; padding: 18px 36px; }
+header h1 { margin: 0 0 4px 0; font-size: 1.45em; }
+header p { margin: 0; color: #bcccdc; }
+nav { background: #243b53; padding: 8px 36px; }
+nav a { color: #d9e2ec; margin-right: 18px; text-decoration: none; font-size: 0.95em; }
+nav a:hover { color: #fff; text-decoration: underline; }
+main { max-width: 1080px; margin: 24px auto; padding: 0 24px; }
+h2 { color: #102a43; border-bottom: 2px solid #d9e2ec; padding-bottom: 4px; }
+h3 { color: #243b53; margin-bottom: 4px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; background: #fff; }
+th, td { border: 1px solid #d9e2ec; padding: 6px 10px; text-align: left;
+         vertical-align: top; font-size: 0.93em; }
+th { background: #e3ecf3; }
+code, pre { font-family: Consolas, monospace; background: #eef2f6; border-radius: 3px; }
+code { padding: 1px 4px; }
+pre { padding: 10px 14px; overflow-x: auto; border: 1px solid #d9e2ec; }
+.card { background: #fff; border: 1px solid #d9e2ec; border-radius: 6px;
+        padding: 12px 18px; margin: 10px 0; }
+.muted { color: #627d98; font-size: 0.9em; }
+.ent { background: #fff; border: 1px solid #d9e2ec; border-left: 4px solid #486581;
+       border-radius: 4px; padding: 8px 14px; margin: 10px 0; }
+.ent pre.sig { background: #f0f4f8; border: none; margin: 0 0 6px 0; padding: 8px 10px;
+               white-space: pre-wrap; }
+.entdoc { margin: 4px 0; }
+.kind { display: inline-block; background: #486581; color: #fff; border-radius: 3px;
+        font-size: 0.78em; padding: 1px 7px; margin-right: 8px; vertical-align: middle; }
+.member-tbl td { font-size: 0.9em; }
+details { margin: 10px 0; }
+details summary { cursor: pointer; color: #486581; font-weight: 600; }
+.provenance { color: #627d98; font-size: 0.85em; margin-top: 4px; }
+.docblock { white-space: pre-wrap; border: none; background: none; margin: 0; padding: 0; }
+footer { text-align: center; color: #627d98; font-size: 0.85em; margin: 28px 0; }
+</style></head>
+<body><header><h1>Help guide</h1>
+<p>Arbitrary-precision SGP4 &amp; dual-quaternion orbit propagation — generated documentation</p></header>
+<nav><a href="index.html">Overview</a><a href="guide.html">Guide</a><a href="api.html">API index</a><a href="theory.html">Theory notes</a><a href="tests.html">Acceptance gates</a><a href="module_math.html">math</a><a href="module_constants.html">constants</a><a href="module_geodesy.html">geodesy</a><a href="module_astronomy.html">astronomy</a><a href="module_ephemeris.html">ephemeris</a><a href="module_atmosphere.html">atmosphere</a><a href="module_forces.html">forces</a><a href="module_perturbation.html">perturbation</a><a href="module_integrators.html">integrators</a><a href="module_dynamics.html">dynamics</a><a href="module_sgp4.html">sgp4</a><a href="module_tle.html">tle</a><a href="module_orbit.html">orbit</a></nav><main>
+
+<p>Task-oriented recipes for the library's main jobs. Every snippet below is extracted
+verbatim from a source file that the acceptance suite compiles and runs (gates EX1/EX2),
+so the guide cannot drift from working code. The <a href="api.html">API index</a> has
+every signature; <a href="index.html">the overview</a> tabulates what each component is verified against.</p>
+
+<h2 id="both-ways">1. Propagate a TLE with either propagator</h2>
+<svg viewBox="0 0 1040 430" role="img" xmlns="http://www.w3.org/2000/svg" style="max-width:1040px;width:100%;height:auto;display:block;margin:14px auto;font-family:Segoe UI,Helvetica,Arial,sans-serif"><defs><marker id="split-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#486581"/></marker></defs><text x="520" y="24" text-anchor="middle" font-size="14" font-weight="600" fill="#102a43">From one TLE to either propagator</text><rect x="420" y="50" width="200" height="50" rx="7" fill="#e3ecf3" stroke="#102a43" stroke-width="1.4"/><text x="520.0" y="71.5" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">TLE / OMM</text><text x="520.0" y="87.5" text-anchor="middle" font-size="11" fill="#1a232e">tle::parse</text><rect x="80" y="150" width="360" height="96" rx="7" fill="#f0f4f8" stroke="#102a43" stroke-width="1.4"/><text x="260.0" y="186.6" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">sgp4::Propagator&lt;T&gt;</text><text x="260.0" y="202.6" text-anchor="middle" font-size="11" fill="#1a232e">authentic analytical SGP4/SDP4 (WGS72)</text><text x="260.0" y="218.6" text-anchor="middle" font-size="11" fill="#1a232e">TEME kilometres</text><text x="260" y="262" text-anchor="middle" font-size="11" fill="#1f7a4d">verified: 33/33 satellites, 623/623 points of the</text><text x="260" y="276" text-anchor="middle" font-size="11" fill="#1f7a4d">published SGP4 test set; results pinned bit-for-bit</text><rect x="600" y="150" width="360" height="96" rx="7" fill="#f0f4f8" stroke="#102a43" stroke-width="1.4"/><text x="780.0" y="186.6" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">dynamics::DqSgp4Propagator&lt;T&gt;</text><text x="780.0" y="202.6" text-anchor="middle" font-size="11" fill="#1a232e">numerical SE(3) integration, metres</text><text x="780.0" y="218.6" text-anchor="middle" font-size="11" fill="#1a232e">authentic | boosted modes + presets</text><text x="780" y="262" text-anchor="middle" font-size="11" fill="#486581">initial state recovered through the WGS72 SGP4 model</text><text x="780" y="276" text-anchor="middle" font-size="11" fill="#486581">(a TLE&#x27;s elements are defined by it); forces opt-in</text><line x1="470.0" y1="100.0" x2="260.0" y2="150.0" stroke="#486581" stroke-width="1.6" marker-end="url(#split-arr)"/><line x1="570.0" y1="100.0" x2="780.0" y2="150.0" stroke="#486581" stroke-width="1.6" marker-end="url(#split-arr)"/><line x1="440.0" y1="198.0" x2="600.0" y2="198.0" stroke="#486581" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#split-arr)"/><text x="520" y="190" text-anchor="middle" font-size="10" fill="#486581">seed</text><rect x="330" y="320" width="380" height="64" rx="7" fill="#e3ecf3" stroke="#102a43" stroke-width="1.4"/><text x="520.0" y="340.6" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">the same verb</text><text x="520.0" y="356.6" text-anchor="middle" font-size="11" fill="#1a232e">propagate(minutes since epoch)</text><text x="520.0" y="372.6" text-anchor="middle" font-size="11" fill="#1a232e">Propagatable concept</text><line x1="260.0" y1="246.0" x2="430.0" y2="320.0" stroke="#486581" stroke-width="1.6" marker-end="url(#split-arr)"/><line x1="780.0" y1="246.0" x2="610.0" y2="320.0" stroke="#486581" stroke-width="1.6" marker-end="url(#split-arr)"/><text x="520" y="404" text-anchor="middle" font-size="11" fill="#486581">The test suite drives both propagators through the shared interface and verifies the results match direct calls exactly.</text></svg>
+<p>The numerical propagator (<code>dynamics::DqSgp4Propagator</code>) integrates
+dual-quaternion dynamics; the analytical SGP4/SDP4
+(<code>sgp4::Propagator</code>, verified against the published test set of 33
+satellites and 623 points) implements the model that defines a TLE's orbital
+elements. Because of that, the numerical propagator recovers its initial state by
+evaluating the analytical model at the epoch — short-period corrections at the
+kilometre scale would be lost by reading the elements as osculating values. The
+analytical headers are not part of the umbrella, so the snippet includes them
+explicitly. Parse once, then:</p>
+<pre>// The standard verification satellite 00005.
+std::string l1 = &quot;1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753&quot;;
+std::string l2 = &quot;2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667&quot;;
+tle::TleData td;
+if (!tle::parse(l1, l2, td)) { std::cerr &lt;&lt; &quot;TLE parse failed\n&quot;; return 1; }
+
+// The analytical SGP4 propagator (explicit include; it is not part of the
+// umbrella header). A TLE&#x27;s orbital elements are defined in terms of this
+// model, so it also provides the numerical propagator&#x27;s initial state.
+sgp4::ModelConfiguration&lt;T&gt; config =
+    sgp4::ModelSelector&lt;T&gt;::select(&quot;sgp4_standard&quot;, T(1e-12));
+tle::TleElements&lt;T&gt; elems = tle::TleElements&lt;T&gt;::from_tle_data(td);
+sgp4::Propagator&lt;T&gt; sgp4_prop(config, elems, T(1e-12));
+
+sgp4::StateVector&lt;T&gt; sv0 = sgp4_prop.propagate(math::exact&lt;T&gt;(0));  // minutes</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p>
+<p>The DQ facade exposes the same <code>propagate(minutes)</code> verb
+(<code>dynamics::Propagatable</code> is the shared concept; gate F2 runs one generic
+driver over BOTH families and asserts bit-equality with direct calls):</p>
+<pre>// The dual-quaternion numerical propagator, with the same call convention:
+// propagate(minutes since epoch). The epoch state is recovered through the
+// WGS72 SGP4 model at t = 0; the propagation itself is SE(3) integration.
+auto dq = dynamics::DqSgp4Propagator&lt;T&gt;::from_tle(
+    td, T(1e-12), dynamics::PropagatorMode::Authentic, math::exact&lt;T&gt;(30));
+dynamics::State&lt;T&gt; s0 = dq.propagate(math::exact&lt;T&gt;(0));  // TEME metres</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p>
+
+<h2 id="forces">2. Add perturbation forces — presets and extra_forces</h2>
+<p>The default DQ force model is gravitational only (the unified geopotential —
+monopole + zonal in one Cunningham pass, gate GEOPOT). Perturbations are opt-in two
+ways. The <code>DqForceOptions</code> presets assemble independently verified forces from
+the TLE epoch — lunisolar third-body (gate TB1, JPL DE430-verified ephemeris),
+Vallado 8-4 table drag (gate ATM1), cannonball SRP (gate SRP1). Gate FM1 measures the
+presets on SGP4-VER satellite 00005 over 60 minutes: lunisolar moves the endpoint
+12.6&nbsp;m, SRP 1.39&nbsp;m, drag 0.33&nbsp;m — and asserts the default stays
+bit-identical to the gravitational-only model:</p>
+<pre>dynamics::DqForceOptions&lt;T&gt; opt;
+opt.lunisolar = true;                                       // Sun + Moon (TB1)
+opt.drag_B = math::TrackedValue&lt;T&gt;::measured(&quot;0.02&quot;, &quot;0.002&quot;);  // C_d*A/m [m^2/kg] (ATM1)
+opt.srp_cr_area_over_mass =
+    math::TrackedValue&lt;T&gt;::measured(&quot;0.02&quot;, &quot;0.002&quot;);       // C_R*A/m [m^2/kg] (SRP1)
+
+auto boosted = dynamics::DqSgp4Propagator&lt;T&gt;::from_tle(
+    td, T(1e-12), dynamics::PropagatorMode::Boosted, math::exact&lt;T&gt;(30), opt);
+dynamics::State&lt;T&gt; s60 = boosted.propagate(math::exact&lt;T&gt;(60));  // t = +60 min</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p>
+<p>Arbitrary forces append after the gravitational core via the explicit constructor's
+<code>extra_forces</code> (each a <code>(State, ConstantsProvider) → Wrench</code>
+lambda; see <code>forces::make_drag</code>, <code>forces::make_third_body_force</code>,
+<code>forces::make_srp_force</code> for ready-made builders; a space-weather
+density model plugs the same <code>DensityModel</code> interface).</p>
+
+<h2 id="adaptive">3. Adaptive stepping</h2>
+<p><code>dynamics::Propagator::propagate_adaptive</code> runs the RKF7(8) embedded
+pair with per-step error control instead of the fixed cadence of
+<code>propagate_to</code>. Gate AD1 asserts it is bit-identical to the standalone
+adaptive loop and exercises the accept/reject diagnostics it returns:</p>
+<pre>const dynamics::Propagator&lt;T&gt;&amp; engine = boosted.propagator();
+math::TrackedValue&lt;T&gt; t_end = boosted.epoch_state().time + math::exact&lt;T&gt;(600);
+integrators::AdaptiveResult&lt;T&gt; ad = engine.propagate_adaptive(
+    boosted.epoch_state(), t_end,
+    math::exact&lt;T&gt;(60),     // initial dt [s]
+    T(1e-6),                // per-step local-error tolerance
+    T(1) / T(100));         // dt floor [s]
+// ad.state, ad.accepted_steps, ad.rejected_steps</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p>
+
+<h2 id="itrs">4. Earth-fixed output — ITRS and ground tracks</h2>
+<svg viewBox="0 0 1040 300" role="img" xmlns="http://www.w3.org/2000/svg" style="max-width:1040px;width:100%;height:auto;display:block;margin:14px auto;font-family:Segoe UI,Helvetica,Arial,sans-serif"><defs><marker id="frames-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#486581"/></marker></defs><text x="520" y="24" text-anchor="middle" font-size="14" font-weight="600" fill="#102a43">The frame chain — from the propagators&#x27; TEME to the Earth-fixed ITRS</text><rect x="30" y="60" width="150" height="54" rx="7" fill="#f0f4f8" stroke="#486581" stroke-width="1.4"/><text x="105.0" y="83.5" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">TEME</text><text x="105.0" y="99.5" text-anchor="middle" font-size="11" fill="#1a232e">SGP4 / DQ output</text><rect x="250" y="60" width="150" height="54" rx="7" fill="#f0f4f8" stroke="#486581" stroke-width="1.4"/><text x="325.0" y="83.5" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">GCRS</text><text x="325.0" y="99.5" text-anchor="middle" font-size="11" fill="#1a232e">quasi-inertial</text><rect x="470" y="60" width="150" height="54" rx="7" fill="#f0f4f8" stroke="#486581" stroke-width="1.4"/><text x="545.0" y="83.5" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">true equator,</text><text x="545.0" y="99.5" text-anchor="middle" font-size="11" fill="#1a232e">true equinox of date</text><rect x="690" y="60" width="150" height="54" rx="7" fill="#f0f4f8" stroke="#486581" stroke-width="1.4"/><text x="765.0" y="83.5" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">ITRS</text><text x="765.0" y="99.5" text-anchor="middle" font-size="11" fill="#1a232e">Earth-fixed</text><rect x="880" y="60" width="130" height="54" rx="7" fill="#f0f4f8" stroke="#486581" stroke-width="1.4"/><text x="945.0" y="83.5" text-anchor="middle" font-size="13" font-weight="600" fill="#1a232e">subpoint</text><text x="945.0" y="99.5" text-anchor="middle" font-size="11" fill="#1a232e">lat / lon / alt</text><line x1="180.0" y1="87.0" x2="250.0" y2="87.0" stroke="#486581" stroke-width="1.6" marker-end="url(#frames-arr)"/><line x1="400.0" y1="87.0" x2="470.0" y2="87.0" stroke="#486581" stroke-width="1.6" marker-end="url(#frames-arr)"/><line x1="620.0" y1="87.0" x2="690.0" y2="87.0" stroke="#486581" stroke-width="1.6" marker-end="url(#frames-arr)"/><line x1="840.0" y1="87.0" x2="880.0" y2="87.0" stroke="#486581" stroke-width="1.6" marker-end="url(#frames-arr)"/><text x="215.0" y="48" text-anchor="middle" font-size="11" fill="#486581">Pᵀ (inverse IAU2006 precession)</text><text x="215.0" y="132" text-anchor="middle" font-size="10" fill="#486581">omitted nutation+EE ≤ ~24″ — deposited as an</text><text x="215.0" y="145" text-anchor="middle" font-size="10" fill="#486581">accuracy bound (FRAME2 erfa-gated rotations)</text><text x="435.0" y="48" text-anchor="middle" font-size="11" fill="#486581">N·P (IAU 2000A nutation)</text><text x="435.0" y="132" text-anchor="middle" font-size="10" fill="#486581">678-term in-repo SOFA table; vs erfa nut06a</text><text x="435.0" y="145" text-anchor="middle" font-size="10" fill="#486581">0.48/0.38 mas (NUT1, planetary floor)</text><text x="655.0" y="48" text-anchor="middle" font-size="11" fill="#486581">R3(GAST) · then W(xp, yp)</text><text x="655.0" y="132" text-anchor="middle" font-size="10" fill="#486581">GAST 0.44 mas; polar motion BIT-exact vs</text><text x="655.0" y="145" text-anchor="middle" font-size="10" fill="#486581">erfa pom00 (NUT1)</text><text x="860.0" y="48" text-anchor="middle" font-size="11" fill="#486581">geocentric</text><text x="860.0" y="132" text-anchor="middle" font-size="10" fill="#486581">EX1 ground track</text><rect x="30" y="200" width="980" height="58" rx="7" fill="#eef2f6" stroke="#d9e2ec" stroke-width="1.4"/><text x="520.0" y="225.7" text-anchor="middle" font-size="12" fill="#1a232e">Full chain vs erfa c2t06a: 1.85e-9 per element ≈ 0.4 mas (gate NUT1, planetary-floor-dominated).</text><text x="520.0" y="240.7" text-anchor="middle" font-size="10" fill="#1a232e">The frozen SGP4 path keeps its historical Aoki-82 TEME→ECEF = Rz(GMST) convention (untouched, OR1).</text></svg>
+<p>SGP4 and the DQ propagator emit TEME. The Earth-fixed chain is
+r<sub>ITRS</sub> = W·R3(GAST)·N·P·r<sub>GCRS</sub>:
+<code>astronomy::gcrs_to_itrs</code> (IAU 2000A nutation from the in-repo SOFA table,
+GMST06/GAST, polar motion). Gate NUT1 measures the chain against erfa
+<code>c2t06a</code> at ~0.4&nbsp;mas (polar motion bit-exact against
+<code>pom00</code>). The gated ground-track example walks the whole pipeline —
+TLE → DQSGP4 → TEME → GCRS → ITRS → subpoint:</p>
+<pre>dynamics::State&lt;T&gt; s = prop.propagate(math::exact&lt;T&gt;(minutes));
+
+// Absolute epoch of this sample (two-part; day part preserved).
+TV jd = el.epoch_jd + math::exact&lt;T&gt;(minutes) / math::exact&lt;T&gt;(1440);
+TV t_tt = astronomy::centuries_since_j2000&lt;T&gt;(jd);
+
+// TEME -&gt; GCRS by the inverse precession (dominant term; note above).
+math::Vector3&lt;T&gt; r_teme = s.position();
+math::Vector3&lt;T&gt; r_gcrs = astronomy::precession_iau2006&lt;T&gt;(t_tt).transpose() * r_teme;
+
+// GCRS -&gt; ITRS: nutation + GAST + polar motion (x_p = y_p = 0 demo EOP).
+math::Matrix3&lt;T&gt; M = astronomy::gcrs_to_itrs&lt;T&gt;(
+    t_tt, jd, math::exact&lt;T&gt;(0), math::exact&lt;T&gt;(0));
+math::Vector3&lt;T&gt; r_itrs = M * r_gcrs;</pre><p class="provenance">Extracted verbatim from <code>examples/ground_track.cpp</code> — compiled and run on every validation by gate <b>EX1</b>.</p>
+<p>Demo honesty (the example prints real grades): using the TLE's UTC epoch for TT
+shifts the subpoint longitude ~0.29°; zero polar motion ≤ ~9&nbsp;m; the subpoint is
+geocentric (geodetic conversion adds up to ~0.19° at mid-latitudes).</p>
+
+<h2 id="errors">5. Reading the three-error budget</h2>
+<p>Every computed quantity is a <code>math::TrackedValue&lt;T&gt;</code>: a value
+plus a <code>ThreeErrors</code> budget — <code>measurement</code> (physical input
+σ), <code>precision</code> (representation/rounding), <code>accuracy</code> (model
+truncation), each propagated through every operation (gate W12 and the per-module
+gates assert the propagation). Read them directly:</p>
+<pre>math::TrackedValue&lt;T&gt; x = sv0.position_km.x;  // any computed quantity
+std::cout &lt;&lt; &quot;  value       &quot; &lt;&lt; x.value &lt;&lt; &quot; km\n&quot;
+          &lt;&lt; &quot;  measurement &quot; &lt;&lt; x.errors.measurement &lt;&lt; &quot; km (physical input sigma)\n&quot;
+          &lt;&lt; &quot;  precision   &quot; &lt;&lt; x.errors.precision &lt;&lt; &quot; km (representation/rounding)\n&quot;
+          &lt;&lt; &quot;  accuracy    &quot; &lt;&lt; x.errors.accuracy &lt;&lt; &quot; km (model truncation)\n&quot;
+          &lt;&lt; &quot;  total       &quot; &lt;&lt; x.errors.total() &lt;&lt; &quot; km (triangle-inequality bound)\n&quot;;</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p>
+<p>The channels answer different questions: precision tells you whether a wider
+<code>T</code> would change the digits; accuracy tells you what the MODEL cannot
+claim regardless of arithmetic; measurement carries published σ from constants
+(e.g. GM☉). <code>total()</code> is the conservative triangle-inequality bound.</p>
+<p>A note on the accuracy bound of a numerically propagated state. The fixed-step
+integrators record a conservative truncation bound on each step, assigned by
+component: a position-scale bound of (h²/2)·A on the translation-carrying part of
+the pose, a velocity-scale bound of h·A on the twist, and the corresponding
+rotational bounds — which are exactly zero when no torque acts — on the rotational
+components (the derivation is in
+<code>runge_kutta_lie_group.md</code> §6.2, and the test suite checks the
+assignment). For a single 30-second RK4 step on a low-Earth orbit this works out to
+about 4&nbsp;km of claimed position accuracy — deliberately conservative, since
+only the acceleration magnitude is available to bound the higher derivatives. Over
+many fixed steps the accumulated bound eventually exceeds the state itself, at
+which point the propagated bound legitimately diverges; it cannot certify a long
+arc. For a meaningful accuracy figure over a long arc, use
+<code>propagate_adaptive</code>, whose embedded 7(8) difference measures the actual
+per-step error, and read the model accuracy of each force from its own
+budget.</p>
+
+<h2 id="choosing-t">6. Choosing T — double vs cpp_bin_float_50</h2>
+<p>Everything is templated on the numeric type. <code>double</code> is the working
+default; <code>boost::multiprecision::cpp_bin_float_50</code> tightens the PRECISION
+channel (the per-module gates measure this — e.g. gate SC1 shows series precision
+scaling with T while accuracy stays pinned by truncation). Wider T does NOT improve
+accuracy: an empirical model keeps its published grade regardless of the
+arithmetic width (more digits cannot improve a fitted model).
+Instantiate with the type you need:</p>
+<pre>using BF50 = boost::multiprecision::cpp_bin_float_50;
+// Everything is templated on the numeric type. Here the analytical model
+// runs at 50 digits; the test suite measures the same precision scaling
+// for the numerical propagator.
+sgp4::ModelConfiguration&lt;BF50&gt; config50 =
+    sgp4::ModelSelector&lt;BF50&gt;::select(&quot;sgp4_standard&quot;, BF50(1e-12));
+sgp4::Propagator&lt;BF50&gt; prop50(
+    config50, tle::TleElements&lt;BF50&gt;::from_tle_data(td), BF50(1e-12));
+sgp4::StateVector&lt;BF50&gt; sv50 = prop50.propagate(math::exact&lt;BF50&gt;(0));
+// The PRECISION channel tightens with the wider T; the ACCURACY channel
+// (model truncation) does not — wider arithmetic cannot improve a model.</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p>
+
+<h2 id="more">Where to go next</h2>
+<ul>
+<li><a href="api.html">API index</a> — every public entity and signature.</li>
+<li><a href="theory.html">Theory notes</a> — the derivations each module falls out of.</li>
+<li><a href="tests.html">Acceptance gates</a> — what is measured, where.</li>
+<li><code>README.md</code> — build instructions (MSBuild on sgp4.sln) and quick starts.</li>
+</ul>
+
+</main><footer>Generated by tools/gen_docs.py from the repository's own headers, theory notes
+and gate registry — regenerate after structural changes.</footer></body></html>

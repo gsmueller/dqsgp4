@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>src/integrators/ — module documentation — DQSGP4</title><style>
+body { font-family: Segoe UI, Helvetica, Arial, sans-serif; margin: 0; color: #1a232e;
+       background: #f6f8fa; line-height: 1.55; }
+header { background: #102a43; color: #f0f4f8; padding: 18px 36px; }
+header h1 { margin: 0 0 4px 0; font-size: 1.45em; }
+header p { margin: 0; color: #bcccdc; }
+nav { background: #243b53; padding: 8px 36px; }
+nav a { color: #d9e2ec; margin-right: 18px; text-decoration: none; font-size: 0.95em; }
+nav a:hover { color: #fff; text-decoration: underline; }
+main { max-width: 1080px; margin: 24px auto; padding: 0 24px; }
+h2 { color: #102a43; border-bottom: 2px solid #d9e2ec; padding-bottom: 4px; }
+h3 { color: #243b53; margin-bottom: 4px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; background: #fff; }
+th, td { border: 1px solid #d9e2ec; padding: 6px 10px; text-align: left;
+         vertical-align: top; font-size: 0.93em; }
+th { background: #e3ecf3; }
+code, pre { font-family: Consolas, monospace; background: #eef2f6; border-radius: 3px; }
+code { padding: 1px 4px; }
+pre { padding: 10px 14px; overflow-x: auto; border: 1px solid #d9e2ec; }
+.card { background: #fff; border: 1px solid #d9e2ec; border-radius: 6px;
+        padding: 12px 18px; margin: 10px 0; }
+.muted { color: #627d98; font-size: 0.9em; }
+.ent { background: #fff; border: 1px solid #d9e2ec; border-left: 4px solid #486581;
+       border-radius: 4px; padding: 8px 14px; margin: 10px 0; }
+.ent pre.sig { background: #f0f4f8; border: none; margin: 0 0 6px 0; padding: 8px 10px;
+               white-space: pre-wrap; }
+.entdoc { margin: 4px 0; }
+.kind { display: inline-block; background: #486581; color: #fff; border-radius: 3px;
+        font-size: 0.78em; padding: 1px 7px; margin-right: 8px; vertical-align: middle; }
+.member-tbl td { font-size: 0.9em; }
+details { margin: 10px 0; }
+details summary { cursor: pointer; color: #486581; font-weight: 600; }
+.provenance { color: #627d98; font-size: 0.85em; margin-top: 4px; }
+.docblock { white-space: pre-wrap; border: none; background: none; margin: 0; padding: 0; }
+footer { text-align: center; color: #627d98; font-size: 0.85em; margin: 28px 0; }
+</style></head>
+<body><header><h1>src/integrators/ — module documentation</h1>
+<p>Arbitrary-precision SGP4 &amp; dual-quaternion orbit propagation — generated documentation</p></header>
+<nav><a href="index.html">Overview</a><a href="guide.html">Guide</a><a href="api.html">API index</a><a href="theory.html">Theory notes</a><a href="tests.html">Acceptance gates</a><a href="module_math.html">math</a><a href="module_constants.html">constants</a><a href="module_geodesy.html">geodesy</a><a href="module_astronomy.html">astronomy</a><a href="module_ephemeris.html">ephemeris</a><a href="module_atmosphere.html">atmosphere</a><a href="module_forces.html">forces</a><a href="module_perturbation.html">perturbation</a><a href="module_integrators.html">integrators</a><a href="module_dynamics.html">dynamics</a><a href="module_sgp4.html">sgp4</a><a href="module_tle.html">tle</a><a href="module_orbit.html">orbit</a></nav><main>
+<p>The explicit Runge–Kutta family on SE(3): one ButcherTableau + rk_step driver (euler/RK4/RKF7(8)) and the symplectic leapfrog.</p><h2>Theory</h2><p>The notes this module's headers cite — the derivations the code fell out of (theory-first; see <a href='theory.html'>the full index</a>).</p><table><tr><th>Note</th><th>Title</th><th>Lead</th></tr><tr><td><a href='https://github.com/gsmueller/dqsgp4/blob/main/design/derivations/runge_kutta_lie_group.md'>runge_kutta_lie_group.md</a></td><td>Explicit Runge–Kutta on SE(3): the Butcher family and the unified `rk_step` driver</td><td>**Theory note (FIRST, before code) for survey item P5** — the integrator unification. Governed by</td></tr></table><h2>Usage</h2><pre>// The canonical gravity path: monopole + zonal J2..Jn in ONE
+// Cunningham pass (forces::geopotential, gate GEOPOT), an RK4
+// integrator, and the force-list engine the facade wraps.
+constants::ConstantsProvider&lt;T&gt; K =
+    constants::ConstantsProvider&lt;T&gt;::wgs84(T(1e-12));
+constants::GravityField&lt;T&gt; field(
+    constants::ZonalHarmonics&lt;T&gt;::egm2008(T(1e-12)),
+    constants::TesseralHarmonics&lt;T&gt;{});
+std::vector&lt;dynamics::ForceFn&lt;T&gt;&gt; forces;
+forces.push_back([field](const dynamics::State&lt;T&gt;&amp; s,
+                         const constants::ConstantsProvider&lt;T&gt;&amp; KK) {
+    return forces::geopotential(s, KK, field, 4, 0, math::exact&lt;T&gt;(0));
+});
+dynamics::IntegratorFn&lt;T&gt; integrator =
+    [](const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt,
+       const integrators::AccelFn&lt;T&gt;&amp; accel) {
+        return integrators::runge_kutta_4(y0, dt, accel);
+    };
+dynamics::Propagator&lt;T&gt; hand(K, dynamics::Inertia&lt;T&gt;::point_mass(math::exact&lt;T&gt;(1)),
+                             std::move(forces), integrator);
+dynamics::State&lt;T&gt; hs = hand.propagate_to(
+    s0, s0.time + math::exact&lt;T&gt;(600), math::exact&lt;T&gt;(60));</pre><p class="provenance">Extracted verbatim from <code>examples/quickstart.cpp</code> — compiled and run on every validation by gate <b>EX2</b>.</p><h2>Test cases — gates and measured grades</h2><p>The acceptance gates covering this module — named in its header doc-blocks, or whose test directly includes one of its headers. The registered note beside each gate records what it asserts and the MEASURED grade (the no-perceived-fidelity rule: stated grades are measured, never aspirational). The <a href='tests.html'>full registry</a> lists every gate.</p><table><tr><th>Gate</th><th>Target</th><th>What it asserts (registered note, measured grades)</th></tr><tr><td><b>AD1</b></td><td><code>test_adaptive_stepping</code></td><td>Cross-cutting — correctness &amp; precision.</td></tr><tr><td><b>I0.test_propagator</b></td><td><code>test_propagator</code></td><td>foundation sweep: the module test exits 0 on every validation</td></tr><tr><td><b>PREC1</b></td><td><code>test_dq_precision</code></td><td>V2 — the solver&#x27;s own arbitrary-precision gate (the DS1 analogue): a 600 s Cartesian-seeded DQ arc at double vs cpp_bin_float_50 — values agree &lt; 1 mm; with the series/iteration tolerance scaled with T (1e-12 -&gt; 1e-40) the position/twist PRECISION channels tighten &gt;= 1e20 (measured ~1e26); at the double-grade tolerance the J2 e²-iteration floor dominates identically at both T (pinned: T alone is n</td></tr><tr><td><b>RK1</b></td><td><code>test_butcher_tableau</code></td><td>RK1: the unified ButcherTableau + rk_step driver (euler/rk4/rkf78 = one driver, three tableaux). Theory: design/derivations/runge_kutta_lie_group.md.</td></tr><tr><td><b>SRP1</b></td><td><code>test_srp</code></td><td>R2 — solar radiation pressure: cannonball + cylindrical shadow; P_1AU GENERATED from L_sun/(4*pi*AU^2*c) (IAU B3 nominal + IAU 2012 AU + SI c, all defined). Theory: design/derivations/solar_radiation_pressure.md.</td></tr><tr><td><b>TB1</b></td><td><code>test_third_body</code></td><td>L4 — Cartesian third-body perturbation force (Sun/Moon). Battin f(q) stable form + the L3 ephemeris; gated vs the naive form @bf50 [formula] and JPL DE430 body positions [ephemeris-&gt;accel]. Theory: design/derivations/third_body_perturbation.md.</td></tr><tr><td><b>W20</b></td><td><code>test_integrator_rkf78</code></td><td>Track E future-proofing (W20-W24)</td></tr><tr><td><b>W21</b></td><td><code>test_integrator_symplectic</code></td><td></td></tr><tr><td><b>W22</b></td><td><code>test_integrator_order</code></td><td></td></tr></table><h2>References</h2><ul><li>Fehlberg (1968), NASA TR R-287 — the RKF7(8) embedded pair.</li><li>Butcher (2003) — order conditions; <a href="https://github.com/gsmueller/dqsgp4/blob/main/design/derivations/runge_kutta_lie_group.md">design/derivations/runge_kutta_lie_group.md</a> — the SE(3) Munthe-Kaas adaptation and the LTE-proxy semantics.</li></ul><h2>API reference</h2><p class="muted">Headers: <a href="#hdr-runge_kutta-h"><code>runge_kutta.h</code></a> · <a href="#hdr-runge_kutta_fehlberg-h"><code>runge_kutta_fehlberg.h</code></a> · <a href="#hdr-symplectic_leapfrog-h"><code>symplectic_leapfrog.h</code></a></p><h3 id="hdr-runge_kutta-h"><code>src/integrators/runge_kutta.h</code></h3><p class="muted">Gates referenced in the doc-block: —</p><div class="card"><pre class="docblock">@file runge_kutta.h
+Lie-group Runge–Kutta integrators for the dual quaternion propagator.</pre></div><div class="ent" id="AccelFn-L52"><span class="kind">alias</span><code>integrators::AccelFn</code><pre class="sig">template&lt;typename T&gt;
+using AccelFn = std::function&lt;dynamics::Twist&lt;T&gt;(const dynamics::State&lt;T&gt;&amp;)&gt;</pre><div class="entdoc">Body-acceleration callback signature. Takes a state, returns the body
+acceleration twist (ω_dot, v_dot) for that state.</div></div><div class="ent" id="lie_advance_pose-L63"><span class="kind">function</span><code>integrators::lie_advance_pose</code><pre class="sig">template&lt;typename T&gt;
+dynamics::Pose&lt;T&gt; lie_advance_pose(const dynamics::Pose&lt;T&gt;&amp; pose, const math::TrackedValue&lt;T&gt;&amp; delta_t, const dynamics::Twist&lt;T&gt;&amp; twist)</pre><div class="entdoc">Lie-group pose advance: pose ← pose · exp_screw((δt/2) · twist).</div></div><div class="ent" id="ButcherTableau-L82"><span class="kind">struct</span><code>integrators::ButcherTableau</code><pre class="sig">template&lt;typename T, int S&gt;
+struct ButcherTableau</pre><div class="entdoc">Butcher tableau for an explicit S-stage Runge–Kutta method: nodes `c`,
+8th/final-order weights `b`, and a strictly-lower-triangular stage matrix
+`a` (a[i][j] used only for j &lt; i). Coefficients are exact rationals
+(`ratio&lt;T&gt;`) / exact integers (`exact&lt;T&gt;`); unset entries are exact zero.
+The consistency identities — row sum Σⱼ a[i][j] = c[i], Σᵢ b[i] = 1, and
+the quadrature order conditions Σᵢ b[i] c[i]ᵏ = 1/(k+1) — are what
+`test_butcher_tableau` checks exactly from the rationals (no numerical
+reference). See <a href="https://github.com/gsmueller/dqsgp4/blob/main/design/derivations/runge_kutta_lie_group.md">design/derivations/runge_kutta_lie_group.md</a> §2.</div><table class="member-tbl"><tr><th>Member</th><th>Signature</th></tr><tr><td><code>c</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>std::array&lt;math::TrackedValue&lt;T&gt;, S&gt; c</pre><div class='entdoc'>stage nodes</div></td></tr><tr><td><code>b</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>std::array&lt;math::TrackedValue&lt;T&gt;, S&gt; b</pre><div class='entdoc'>combine weights</div></td></tr><tr><td><code>a</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>std::array&lt;std::array&lt;math::TrackedValue&lt;T&gt;, S&gt;, S&gt; a</pre><div class='entdoc'>stage matrix</div></td></tr><tr><td><code>ButcherTableau</code><br><span class='muted'>function</span></td><td><pre class='sig' style='margin:0'>ButcherTableau()</pre><div class='entdoc'>All entries exact zero; the named factories fill the method&#x27;s rationals.</div></td></tr></table></div><div class="ent" id="RkStepResult-L99"><span class="kind">struct</span><code>integrators::RkStepResult</code><pre class="sig">template&lt;typename T, int S&gt;
+struct RkStepResult</pre><div class="entdoc">Output of one `rk_step`: the integrated state and the per-stage body
+accelerations (the entry points need these for their truncation-error
+policies; `rk_step` itself deposits no error budget).</div><table class="member-tbl"><tr><th>Member</th><th>Signature</th></tr><tr><td><code>state</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>dynamics::State&lt;T&gt; state</pre><div class='entdoc'></div></td></tr><tr><td><code>stage_accel</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>std::array&lt;dynamics::Twist&lt;T&gt;, S&gt; stage_accel</pre><div class='entdoc'></div></td></tr></table></div><div class="ent" id="rk_step-L113"><span class="kind">function</span><code>integrators::rk_step</code><pre class="sig">template&lt;typename T, int S&gt;
+RkStepResult&lt;T, S&gt; rk_step(const ButcherTableau&lt;T, S&gt;&amp; tab, const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt, const AccelFn&lt;T&gt;&amp; accel_fn)</pre><div class="entdoc">Generic Lie-group explicit-RK step (REQ-IN-1/4). For each stage i the twist
+advances in the flat se(3) tangent, Wᵢ = twist₀ + dt·Σⱼ a[i][j] Aⱼ, and the
+pose advances from y0 by the SINGLE screw exponential of the RK twist
+combination, lie_advance_pose(pose₀, dt, Σⱼ a[i][j] Wⱼ); Aᵢ is the callback
+at that stage state. The output advances the pose by the b-weighted stage
+twists and the twist by the b-weighted accelerations. This is the one loop
+euler (S=1), runge_kutta_4 (S=4), and rkf78 (S=13) all run.
+Derivation: <a href="https://github.com/gsmueller/dqsgp4/blob/main/design/derivations/runge_kutta_lie_group.md">design/derivations/runge_kutta_lie_group.md</a> §3–§4.</div></div><div class="ent" id="euler_tableau-L152"><span class="kind">function</span><code>integrators::euler_tableau</code><pre class="sig">template&lt;typename T&gt;
+ButcherTableau&lt;T, 1&gt; euler_tableau()</pre><div class="entdoc">One-stage tableau: c=(0), b=(1), a=((0)) — forward Euler.</div></div><div class="ent" id="rk4_tableau-L160"><span class="kind">function</span><code>integrators::rk4_tableau</code><pre class="sig">template&lt;typename T&gt;
+ButcherTableau&lt;T, 4&gt; rk4_tableau()</pre><div class="entdoc">Classical RK4 tableau: c=(0,½,½,1), b=(⅙,⅓,⅓,⅙), a₁₀=a₂₁=½, a₃₂=1.</div></div><div class="ent" id="euler-L177"><span class="kind">function</span><code>integrators::euler</code><pre class="sig">template&lt;typename T&gt;
+dynamics::State&lt;T&gt; euler(const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt, const AccelFn&lt;T&gt;&amp; accel_fn)</pre><div class="entdoc">Forward Euler (one-stage). Cheap and simple; first-order accurate in
+δt. Useful for unit tests and short-step diagnostic runs; not
+recommended for long propagations. = rk_step(euler_tableau) + LTE.</div></div><div class="ent" id="runge_kutta_4-L204"><span class="kind">function</span><code>integrators::runge_kutta_4</code><pre class="sig">template&lt;typename T&gt;
+dynamics::State&lt;T&gt; runge_kutta_4(const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt, const AccelFn&lt;T&gt;&amp; accel_fn)</pre><div class="entdoc">Classical Runge–Kutta 4 (four-stage). Fourth-order accurate in δt.
+= rk_step(rk4_tableau) + LTE. The generic combine Σ bᵢ Wᵢ reorders the
+hand-factored ⅙(W₁+2W₂+2W₃+W₄), so the result is round-off-equal (not
+bit) to the prior form — see runge_kutta_lie_group.md §4.2.</div></div><h3 id="hdr-runge_kutta_fehlberg-h"><code>src/integrators/runge_kutta_fehlberg.h</code></h3><p class="muted">Gates referenced in the doc-block: —</p><div class="card"><pre class="docblock">@file runge_kutta_fehlberg.h
+Adaptive Runge–Kutta–Fehlberg 7(8) integrator (Fehlberg 1968, NASA TR
+R-287), in the same Lie-group / Munthe-Kaas style as `runge_kutta_4`.</pre></div><div class="ent" id="kRkf78Stages-L46"><span class="kind">constant</span><code>integrators::kRkf78Stages</code><pre class="sig">inline constexpr int kRkf78Stages</pre><div class="entdoc">Number of RKF7(8) stages.</div></div><div class="ent" id="StepResult-L51"><span class="kind">struct</span><code>integrators::StepResult</code><pre class="sig">template&lt;typename T&gt;
+struct StepResult</pre><div class="entdoc">Result of one adaptive step: the advanced (8th-order) state and the
+embedded local error estimate (REQ-IN-6).</div><table class="member-tbl"><tr><th>Member</th><th>Signature</th></tr><tr><td><code>state</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>dynamics::State&lt;T&gt; state</pre><div class='entdoc'>8th-order advanced state.</div></td></tr><tr><td><code>error</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>math::TrackedValue&lt;T&gt; error</pre><div class='entdoc'>Embedded 7(8) local error estimate.</div></td></tr></table></div><div class="ent" id="rkf78_tableau-L63"><span class="kind">function</span><code>integrators::rkf78_tableau</code><pre class="sig">template&lt;typename T&gt;
+ButcherTableau&lt;T, kRkf78Stages&gt; rkf78_tableau()</pre><div class="entdoc">Build the Fehlberg 7(8) Butcher tableau (nodes, stage matrix, weights) as a
+generic `ButcherTableau&lt;T, kRkf78Stages&gt;`. Returned by value; no global
+state (CON-2). Coefficients are exact rationals (`ratio&lt;T&gt;`); unset
+stage-matrix entries are the tableau&#x27;s exact-zero default. `b` holds the
+8th-order weights; the embedded 7th-order error term is computed directly
+in `rkf78_step` (Fehlberg&#x27;s compact 41/840 form).</div></div><div class="ent" id="rkf78_step-L106"><span class="kind">function</span><code>integrators::rkf78_step</code><pre class="sig">template&lt;typename T&gt;
+StepResult&lt;T&gt; rkf78_step(const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt, const AccelFn&lt;T&gt;&amp; accel_fn)</pre><div class="entdoc">One adaptive RKF7(8) step. Returns the 8th-order advanced state and the
+embedded local error estimate (REQ-IN-6).</div></div><div class="ent" id="rkf78-L129"><span class="kind">function</span><code>integrators::rkf78</code><pre class="sig">template&lt;typename T&gt;
+dynamics::State&lt;T&gt; rkf78(const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt, const AccelFn&lt;T&gt;&amp; accel_fn)</pre><div class="entdoc">Canonical `State → State` form (REQ-IN-1) for the propagator&#x27;s force list.
+Advances by the 8th-order solution and folds the embedded local error
+estimate into the state&#x27;s `errors.accuracy` (REQ-IN-8 / REQ-EF-7).</div></div><div class="ent" id="AdaptiveResult-L146"><span class="kind">struct</span><code>integrators::AdaptiveResult</code><pre class="sig">template&lt;typename T&gt;
+struct AdaptiveResult</pre><div class="entdoc">Outcome of an adaptive RKF7(8) propagation: the final state plus step
+diagnostics.</div><table class="member-tbl"><tr><th>Member</th><th>Signature</th></tr><tr><td><code>state</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>dynamics::State&lt;T&gt; state</pre><div class='entdoc'>Final state at t_target.</div></td></tr><tr><td><code>accepted_steps</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>long accepted_steps</pre><div class='entdoc'>Steps whose local error met tol.</div></td></tr><tr><td><code>rejected_steps</code><br><span class='muted'>data</span></td><td><pre class='sig' style='margin:0'>long rejected_steps</pre><div class='entdoc'>Steps retried with a smaller dt.</div></td></tr></table></div><div class="ent" id="rkf78_propagate_adaptive-L161"><span class="kind">function</span><code>integrators::rkf78_propagate_adaptive</code><pre class="sig">template&lt;typename T&gt;
+AdaptiveResult&lt;T&gt; rkf78_propagate_adaptive(const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; t_target, const math::TrackedValue&lt;T&gt;&amp; dt_initial, const AccelFn&lt;T&gt;&amp; accel_fn, const T&amp; tol, const T&amp; dt_min)</pre><div class="entdoc">Adaptively integrate `y0` → `t_target` with RKF7(8) embedded-error step
+control (REQ-IN-6 — the closed loop the fixed-cadence `propagate_to` omits).
+A step is ACCEPTED when its local error estimate ≤ `tol`, otherwise RETRIED
+with a smaller dt; the next dt is scaled by the standard 8th-order law
+dt·0.9·(tol/err)^(1/8), clamped to [0.1, 5]× and floored at `dt_min` (which
+also force-accepts, so the loop cannot stall). The final step is shortened to
+land exactly on `t_target`, and the summed local-error estimate is folded
+into the returned twist&#x27;s accuracy budget.</div></div><h3 id="hdr-symplectic_leapfrog-h"><code>src/integrators/symplectic_leapfrog.h</code></h3><p class="muted">Gates referenced in the doc-block: —</p><div class="card"><pre class="docblock">@file symplectic_leapfrog.h
+Symplectic leapfrog (kick–drift–kick velocity Verlet) integrator for
+time-independent conservative problems (REQ-IN-9).</pre></div><div class="ent" id="symplectic_leapfrog-L38"><span class="kind">function</span><code>integrators::symplectic_leapfrog</code><pre class="sig">template&lt;typename T&gt;
+dynamics::State&lt;T&gt; symplectic_leapfrog(const dynamics::State&lt;T&gt;&amp; y0, const math::TrackedValue&lt;T&gt;&amp; dt, const AccelFn&lt;T&gt;&amp; accel_fn)</pre><div class="entdoc">One symplectic leapfrog (velocity-Verlet KDK) step.</div></div>
+</main><footer>Generated by tools/gen_docs.py from the repository's own headers, theory notes
+and gate registry — regenerate after structural changes.</footer></body></html>

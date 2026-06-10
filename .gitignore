@@ -1,0 +1,13 @@
+# Build outputs
+build/
+.vs/
+*.exe
+*.obj
+*.pdb
+*.ilk
+
+# Dependencies (restored via the vcpkg.json manifest: `vcpkg install`)
+vcpkg_installed/
+
+# Tooling caches
+__pycache__/
